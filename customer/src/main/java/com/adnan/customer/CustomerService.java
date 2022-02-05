@@ -2,13 +2,20 @@ package com.adnan.customer;
 
 import com.adnan.clients.fraud.FraudCheckResponse;
 import com.adnan.clients.fraud.FraudClient;
+import com.adnan.clients.notification.NotificationClient;
+import com.adnan.clients.notification.NotificationRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
+
 @Service
 @Slf4j
-public record CustomerService(CustomerRepository customerRepository, RestTemplate restTemplate, FraudClient fraudClient) {
+public record CustomerService(CustomerRepository customerRepository,
+                              RestTemplate restTemplate,
+                              FraudClient fraudClient,
+                              NotificationClient notificationClient) {
     public void registerCustomer(CustomerRegistrationRequest customerRegistrationRequest) {
       Customer customer = Customer.builder()
               .firstName(customerRegistrationRequest.firstName())
@@ -22,6 +29,15 @@ public record CustomerService(CustomerRepository customerRepository, RestTemplat
         FraudCheckResponse fraudCheckResponse = fraudClient.isFraudster(customer.getId());
         if(fraudCheckResponse.isFraudster()) {
             throw new IllegalArgumentException("Customer Fraudster");
+        } else {
+            NotificationRequest notificationRequest =
+                    new NotificationRequest(
+                            customer.getId(),
+                            customer.getEmail(),
+                            customer.getFirstName(),
+                            "Customer not a fraudster",
+                            LocalDateTime.now());
+            notificationClient.sendNotification(notificationRequest);
         }
     }
 }
