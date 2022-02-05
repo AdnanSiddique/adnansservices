@@ -1,0 +1,3 @@
+# Read Me
+Sample project for creating simple microservices with spring boot, kafka, rabbitmq, dockers and k8 
+Currently in progress....
