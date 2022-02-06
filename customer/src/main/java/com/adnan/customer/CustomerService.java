@@ -1,5 +1,6 @@
 package com.adnan.customer;
 
+import com.adnan.amqp.RabbitMqMessageProducer;
 import com.adnan.clients.fraud.FraudCheckResponse;
 import com.adnan.clients.fraud.FraudClient;
 import com.adnan.clients.notification.NotificationClient;
@@ -15,7 +16,8 @@ import java.time.LocalDateTime;
 public record CustomerService(CustomerRepository customerRepository,
                               RestTemplate restTemplate,
                               FraudClient fraudClient,
-                              NotificationClient notificationClient) {
+                              NotificationClient notificationClient,
+                              RabbitMqMessageProducer rabbitMqMessageProducer) {
     public void registerCustomer(CustomerRegistrationRequest customerRegistrationRequest) {
       Customer customer = Customer.builder()
               .firstName(customerRegistrationRequest.firstName())
@@ -36,8 +38,9 @@ public record CustomerService(CustomerRepository customerRepository,
                             customer.getEmail(),
                             customer.getFirstName(),
                             "Customer not a fraudster",
-                            LocalDateTime.now());
-            notificationClient.sendNotification(notificationRequest);
+                            null);
+            //notificationClient.sendNotification(notificationRequest);
+            rabbitMqMessageProducer.publish(notificationRequest, "internal.exchange","internal.notification.routing-key");
         }
     }
 }
